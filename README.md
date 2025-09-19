@@ -22,7 +22,8 @@ cd foodgram-st
 POSTGRES_USER=postgres
 POSTGRES_DB=foodgram
 POSTGRES_PASSWORD=12345
-DB_PORT=5432 DB_HOST=db
+DB_PORT=5432
+DB_HOST=db
 ```
 ### 3. Запустите проект через Docker Compose: 
 ```bash
