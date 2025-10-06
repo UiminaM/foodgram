@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: foodgram
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: collect-static
+          image: foodgram_backend:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "manage.py", "collectstatic", "--noinput"]
+          env:
+            - name: DJANGO_SECRET_KEY
+              value: "devsecret"
+            - name: DJANGO_DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "*"
+          volumeMounts:
+            - name: collected-static-files
+              mountPath: /app/static
+            - name: media-files
+              mountPath: /app/media
+
+      containers:
+        - name: backend
+          image: foodgram_backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-configmap
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: db-configmap
+                  key: DB_PORT
+            - name: DJANGO_SECRET_KEY
+              value: "devsecret"
+            - name: DJANGO_DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "*"
+          volumeMounts:
+            - name: collected-static-files
+              mountPath: /app/static
+            - name: media-files
+              mountPath: /app/media
+
+      
+      volumes:
+        - name: collected-static-files
+          persistentVolumeClaim:
+            claimName: collected-static-pvc
+        - name: media-files
+          persistentVolumeClaim:
+            claimName: media-pvc

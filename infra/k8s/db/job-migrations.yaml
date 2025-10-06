@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backend-migrations
+  namespace: foodgram
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: postgres:16
+        command: ["sh", "-c", "until pg_isready -h db-service -p 5432; do sleep 2; done"]
+      containers:
+      - name: backend
+        image: foodgram_backend:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "manage.py", "migrate", "--noinput"]
+        envFrom:
+        - secretRef:
+            name: db-secrets
+        - configMapRef:
+            name: db-configmap
+      restartPolicy: OnFailure

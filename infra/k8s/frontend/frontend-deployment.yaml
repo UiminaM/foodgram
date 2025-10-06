@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: foodgram
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: foodgram_front:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: collected-static-files
+              mountPath: /app/static
+            - name: media-files
+              mountPath: /app/media
+      volumes:
+        - name: collected-static-files
+          persistentVolumeClaim:
+            claimName: collected-static-pvc
+        - name: media-files
+          persistentVolumeClaim:
+            claimName: media-pvc
