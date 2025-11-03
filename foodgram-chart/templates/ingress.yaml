@@ -2,33 +2,33 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: foodgram-ingress
-  namespace: foodgram
+  namespace: {{ .Values.namespace }}
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-  - host: foodgram.local
+  - host: {{ .Values.domain }}
     http:
       paths:
       - path: /api
         pathType: Prefix
         backend:
           service:
-            name: backend-service
+            name: {{ .Values.service.backend.name }}
             port:
-              number: 8000
+              number: {{ .Values.service.backend.port }}
       - path: /admin
         pathType: Prefix
         backend:
           service:
-            name: backend-service
+            name: {{ .Values.service.backend.name }}
             port:
-              number: 8000
+              number: {{ .Values.service.backend.port }}
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-service
+            name: {{ .Values.service.frontend.name }}
             port:
-              number: 80
+              number: {{ .Values.service.frontend.port }}
