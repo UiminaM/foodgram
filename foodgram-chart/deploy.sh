@@ -7,3 +7,4 @@ set +a
 helm upgrade --install foodgram-helm ./foodgram-helm \
   -n foodgram \
   -f values.yaml 
+  

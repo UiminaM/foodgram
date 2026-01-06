@@ -1,0 +1,14 @@
+image:
+  repository: foodgram_frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  name: frontend-service
+  port: 80
+
+persistence:
+  collectedStatic:
+    enabled: true
+  media:
+    enabled: true

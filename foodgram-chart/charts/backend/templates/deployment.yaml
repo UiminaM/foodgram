@@ -3,15 +3,17 @@ kind: Deployment
 metadata:
   name: backend-deployment
   namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "foodgram-chart.labels" (dict "component" "backend" "context" .) | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: backend
+      {{- include "foodgram-chart.selectorLabels" (dict "component" "backend" "context" .) | nindent 6 }}
   template:
     metadata:
       labels:
-        app: backend
+        {{- include "foodgram-chart.selectorLabels" (dict "component" "backend" "context" .) | nindent 8 }}
     spec:
       initContainers:
         - name: wait-for-db
@@ -24,16 +26,12 @@ spec:
                 sleep 2
               done
         - name: collect-static
-          image: {{ .Values.image.backend }}
+          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python", "manage.py", "collectstatic", "--noinput"]
-          env:
-            - name: DJANGO_SECRET_KEY
-              value: "devsecret"
-            - name: DJANGO_DEBUG
-              value: "False"
-            - name: ALLOWED_HOSTS
-              value: "*"
+          envFrom:
+            - configMapRef:
+                name: backend-configmap
           volumeMounts:
             - name: collected-static-files
               mountPath: /app/static
@@ -42,27 +40,13 @@ spec:
 
       containers:
         - name: backend
-          image: {{ .Values.image.backend }}
+          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.backend.port }}
-          env:
-            - name: POSTGRES_DB
-              value: {{ .Values.postgresql.auth.database | quote }}
-            - name: POSTGRES_USER
-              value: {{ .Values.postgresql.auth.username | quote }}
-            - name: POSTGRES_PASSWORD
-              value: {{ .Values.postgresql.auth.password | quote }}
-            - name: DB_HOST
-              value: "{{ .Release.Name }}-postgresql"
-            - name: DB_PORT
-              value: {{ .Values.database.port | quote }}
-            - name: DJANGO_SECRET_KEY
-              value: "devsecret"
-            - name: DJANGO_DEBUG
-              value: "False"
-            - name: ALLOWED_HOSTS
-              value: "*"
+          envFrom:
+            - configMapRef:
+                name: backend-configmap
           volumeMounts:
             - name: collected-static-files
               mountPath: /app/static
@@ -72,7 +56,7 @@ spec:
       volumes:
         - name: collected-static-files
           persistentVolumeClaim:
-            claimName: collected-static-pvc
+            claimName: {{ .Values.pvc.collect-static.name }}
         - name: media-files
           persistentVolumeClaim:
-            claimName: media-pvc
+            claimName: {{ .Values.pvc.media.name }}

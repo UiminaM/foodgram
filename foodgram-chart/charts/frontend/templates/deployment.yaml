@@ -3,15 +3,17 @@ kind: Deployment
 metadata:
   name: frontend-deployment
   namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "foodgram-chart.labels" (dict "component" "frontend" "context" .) | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: frontend
+      {{- include "foodgram-chart.selectorLabels" (dict "component" "frontend" "context" .) | nindent 6 }}
   template:
     metadata:
       labels:
-        app: frontend
+        {{- include "foodgram-chart.selectorLabels" (dict "component" "frontend" "context" .) | nindent 8 }}
     spec:
       containers:
         - name: frontend
@@ -27,7 +29,7 @@ spec:
       volumes:
         - name: collected-static-files
           persistentVolumeClaim:
-            claimName: collected-static-pvc
+            claimName: {{ .Values.pvc.collect-static.name }}
         - name: media-files
           persistentVolumeClaim:
-            claimName: media-pvc
+            claimName: {{ .Values.pvc.media.name }}

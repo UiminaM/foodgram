@@ -2,37 +2,8 @@ namespace: foodgram
 domain: foodgram.local
 replicaCount: 1
 
-image:
-  backend: foodgram_backend:latest
-  frontend: foodgram_frontend:latest
-  pullPolicy: IfNotPresent
-
-service:
-  backend:
-    name: backend-service
-    port: 8000
-  frontend:
-    name: frontend-service
-    port: 80
-
-backend:
-  persistence:
-    collectedStatic:
-      enabled: true
-    media:
-      enabled: true
-frontend:
-  persistence:
-    collectedStatic:
-      enabled: true
-    media:
-      enabled: true
-
 ingress:
   className: nginx
-
-database:
-  port: 5432
 
 postgresql:
   enabled: true

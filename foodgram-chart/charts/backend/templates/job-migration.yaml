@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-job
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "foodgram-chart.labels" (dict "component" "migration" "context" .) | nindent 4 }}
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "manage.py", "migrate", "--noinput"]
+          envFrom:
+            - configMapRef:
+                name: backend-configmap

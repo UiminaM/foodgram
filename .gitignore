@@ -1,2 +1,2 @@
-foodgram-chart/charts/*
 foodgram-chart/.env
+charts/*.tgz

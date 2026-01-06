@@ -46,13 +46,20 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "foodgram-chart.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "foodgram-chart.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- $comp := index . 0 -}}
+{{- $context := index . 1 -}}
+app.kubernetes.io/name: {{ include "foodgram-chart.name" $context }}
+app.kubernetes.io/instance: {{ $context.Release.Name }}
+app.kubernetes.io/component: {{ include "foodgram-chart.component" $comp }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
+{{- define "foodgram-chart.component" -}}
+{{- printf "%s" . }}
+{{- end }}
+
 {{- define "foodgram-chart.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
 {{- default (include "foodgram-chart.fullname" .) .Values.serviceAccount.name }}
