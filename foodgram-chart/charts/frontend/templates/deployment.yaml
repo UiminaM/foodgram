@@ -2,25 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend-deployment
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    {{- include "foodgram-chart.labels" (dict "component" "frontend" "context" .) | nindent 4 }}
+    {{- include "frontend.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "foodgram-chart.selectorLabels" (dict "component" "frontend" "context" .) | nindent 6 }}
+      {{- include "frontend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "foodgram-chart.selectorLabels" (dict "component" "frontend" "context" .) | nindent 8 }}
+        {{- include "frontend.labels" . | nindent 8 }}
     spec:
       containers:
         - name: frontend
-          image: {{ .Values.image.frontend }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.frontend.port }}
+            - containerPort: {{ .Values.service.port }}
           volumeMounts:
             - name: collected-static-files
               mountPath: /app/static
@@ -29,7 +29,8 @@ spec:
       volumes:
         - name: collected-static-files
           persistentVolumeClaim:
-            claimName: {{ .Values.pvc.collect-static.name }}
+            claimName: {{ .Values.global.persistence.collectedStatic.name }}
         - name: media-files
           persistentVolumeClaim:
-            claimName: {{ .Values.pvc.media.name }}
+            claimName: {{ .Values.global.persistence.media.name }}
+

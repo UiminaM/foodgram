@@ -1,0 +1,26 @@
+service:
+  type: ClusterIP
+  ports:
+    name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+
+statefulset:
+  replicas: 1
+  image:
+    name: redis/redis-stack-server
+    tag: 7.4.0-v8
+    pullPolicy: IfNotPresent
+  pvc:
+    name: data
+    mountPath: /data/redis
+    accessMode: ReadWriteOnce
+    storage: 1Gi
+
+config:
+  host: redis-headless-service
+  port: 6379
+
+secret:
+  password: ref+vault://secret/foodgram/redis/#password

@@ -25,11 +25,17 @@ appVersion: "1.16.0"
 
 dependencies:
   - name: postgresql
-    version: ~12.1.0 
+    version: ~13.1.0 
     repository: "https://charts.bitnami.com/bitnami"
+
+  - name: redis
+    version: 0.1.0
+    repository: "file://charts/redis"
+  
   - name: backend
     version: 0.1.0
-    repository: "file://./charts/backend"
+    repository: "file://charts/backend"
+  
   - name: frontend
     version: 0.1.0
-    repository: "file://./charts/frontend"
+    repository: "file://charts/frontend"

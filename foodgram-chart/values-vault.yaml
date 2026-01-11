@@ -25,7 +25,7 @@ server:
 
   ingress:
     enabled: true
-    ingressClassName: {{ .Values.ingress.className }}
+    ingressClassName: nginx
     annotations: {}
     hosts:
       - host: vault.local

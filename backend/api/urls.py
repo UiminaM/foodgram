@@ -1,7 +1,13 @@
 from django.urls import include, path
 from rest_framework import routers
 from . import reset_password_views
-from .views import IngredientViewSet, PublicUserViewSet, RecipeViewSet
+from .views import (
+    IngredientViewSet,
+    PublicUserViewSet,
+    RecipeViewSet,
+    culc_product_nutrients,
+    culc_recipe_nutrients,
+)
 
 
 app_name = "api"
@@ -41,4 +47,19 @@ urlpatterns += [
         reset_password_views.reset_password_confirm,
         name="reset_password_confirm"
     ),
+
+]
+
+urlpatterns += [
+    path(
+        "nutrition/product/",
+        culc_product_nutrients,
+        name="get_product_nutrients"
+    ),
+    path(
+        "nutrition/recipe/",
+        culc_recipe_nutrients,
+        name="get_recipe_nutrients"
+    ),
+    
 ]

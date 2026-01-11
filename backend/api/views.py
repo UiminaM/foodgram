@@ -26,6 +26,9 @@ from django_filters.rest_framework import (
 from .permissions import IsAuthorOrReadOnly
 from users.models import Favourite
 from rest_framework import filters
+from services.sql_cache import CachedSQL
+from .api_nutrition import get_product_nutrients, get_recipe_nutrients
+import os
 
 
 class RecipeFilter(FilterSet):
@@ -98,19 +101,23 @@ class CustomPageNumberPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(CachedSQL, viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = CustomFilter
     pagination_class = None
     permission_classes = (permissions.AllowAny,)
+    cache_prefix = "ingredients"
+    cache_ttl = 3600
 
 
-class PublicUserViewSet(UserViewSet):
+class PublicUserViewSet(CachedSQL, UserViewSet):
     pagination_class = CustomPageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = UserFilter
+    cache_prefix = "users"
+    cache_ttl = 3600
 
     def get_queryset(self):
         users = User.objects.all()
@@ -250,7 +257,7 @@ class PublicUserViewSet(UserViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(CachedSQL, viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [
@@ -261,6 +268,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
     filterset_class = RecipeFilter
     ordering_fields = ("-created_at",)
+    cache_prefix = "recipes"
+    cache_ttl = 3600
 
     @action(
         detail=True,
@@ -388,3 +397,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = ('attachment; '
                                            'filename="shopping_list.txt"')
         return response
+
+
+app_id = os.getenv("EDAMAM_APP_ID")
+app_key = os.getenv("EDAMAM_APP_KEY")
+
+def culc_product_nutrients(request):
+    product = request.data.get('product')
+    result = get_product_nutrients(product, app_id, app_key)
+    return Response(result)
+
+
+def culc_recipe_nutrients(request):
+    recipe_id = request.data.get('recipe')
+    recipe_obj = get_object_or_404(Recipe, id=recipe_id)
+    
+    ingredients = []
+    for recipe_ingredient in recipe_obj.recipe_ingredients.all():
+        ingredient_name = recipe_ingredient.ingredient.name
+        amount = recipe_ingredient.amount
+        unit = recipe_ingredient.ingredient.measurement_unit
+        ingredients.append(f"{amount} {unit} {ingredient_name}")
+    
+    result = get_recipe_nutrients(recipe_id, ingredients, app_id, app_key)
+    return Response(result)

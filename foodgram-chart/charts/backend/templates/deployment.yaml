@@ -2,18 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
-    {{- include "foodgram-chart.labels" (dict "component" "backend" "context" .) | nindent 4 }}
+    {{- include "backend.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "foodgram-chart.selectorLabels" (dict "component" "backend" "context" .) | nindent 6 }}
+      {{- include "backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "foodgram-chart.selectorLabels" (dict "component" "backend" "context" .) | nindent 8 }}
+        {{- include "backend.labels" . | nindent 8 }}
     spec:
       initContainers:
         - name: wait-for-db
@@ -26,7 +26,7 @@ spec:
                 sleep 2
               done
         - name: collect-static
-          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python", "manage.py", "collectstatic", "--noinput"]
           envFrom:
@@ -40,13 +40,18 @@ spec:
 
       containers:
         - name: backend
-          image: {{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.backend.port }}
+            - containerPort: {{ .Values.service.port }}
           envFrom:
             - configMapRef:
                 name: backend-configmap
+            {{- if .Values.envFrom }}
+            {{- range .Values.envFrom }}
+            - {{ . | toYaml | nindent 14 }}
+            {{- end }}
+            {{- end }}
           volumeMounts:
             - name: collected-static-files
               mountPath: /app/static
@@ -56,7 +61,8 @@ spec:
       volumes:
         - name: collected-static-files
           persistentVolumeClaim:
-            claimName: {{ .Values.pvc.collect-static.name }}
+            claimName: {{ .Values.global.persistence.collectedStatic.name }}
         - name: media-files
           persistentVolumeClaim:
-            claimName: {{ .Values.pvc.media.name }}
+            claimName: {{ .Values.global.persistence.media.name }}
+

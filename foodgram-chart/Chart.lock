@@ -1,12 +1,15 @@
 dependencies:
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
-  version: 12.1.15
+  version: 13.1.5
+- name: redis
+  repository: file://charts/redis
+  version: 0.1.0
 - name: backend
-  repository: file://./charts/backend
+  repository: "file://charts/backend"
   version: 0.1.0
 - name: frontend
-  repository: file://./charts/frontend
   version: 0.1.0
-digest: sha256:0c9df43d75e00dbd4f4c6b275582d5597714191ee24a02eb2539f1da7ac2651f
-generated: "2026-01-06T18:44:08.336633+03:00"
+  repository: "file://charts/frontend"
+digest: sha256:13a67cd99418e8ef0bd7d07a3321dae8235a32ecf48b8a76adb623d7e64c16cd
+generated: "2026-01-10T12:04:53.961621+03:00"

@@ -1,2 +1,4 @@
+foodgram-chart/charts/*.tgz
 foodgram-chart/.env
-charts/*.tgz
+__pycache__/
+*.py[cod]

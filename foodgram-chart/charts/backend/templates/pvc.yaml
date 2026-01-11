@@ -1,0 +1,27 @@
+{{- if .Values.global.persistence.collectedStatic.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.global.persistence.collectedStatic.name }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+spec:
+  accessModes: {{ .Values.global.persistence.collectedStatic.accessModes | toYaml | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.global.persistence.collectedStatic.storage }}
+{{- end }}
+
+{{- if .Values.global.persistence.media.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.global.persistence.media.name }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+spec:
+  accessModes: {{ .Values.global.persistence.media.accessModes | toYaml | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.global.persistence.media.storage }}
+{{- end }}
+

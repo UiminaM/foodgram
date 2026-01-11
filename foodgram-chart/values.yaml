@@ -1,9 +1,25 @@
-namespace: foodgram
-domain: foodgram.local
-replicaCount: 1
+global:
+  namespace: foodgram
+  domain: foodgram.local
+  persistence:
+    collectedStatic:
+      enabled: true
+      name: collected-static-pvc
+      accessModes:
+        - ReadWriteOnce
+      storage: 1Gi
+    media:
+      enabled: true
+      name: media-pvc
+      accessModes:
+        - ReadWriteOnce
+      storage: 1Gi
 
 ingress:
   className: nginx
+
+database:
+  port: 5432
 
 postgresql:
   enabled: true

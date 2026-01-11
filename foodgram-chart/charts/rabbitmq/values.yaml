@@ -1,0 +1,14 @@
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: rabbitmq.foodgram.localhost.ru
+  path: /
+  pathType: Prefix
+  annotations:
+    cert-manager.io/cluster-issuer: "http01-clusterissuer"
+
+service:
+  type: LoadBalancer
+
+persistence:
+  enabled: false

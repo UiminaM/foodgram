@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-configmap
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+data:
+  POSTGRES_DB: {{ .Values.postgresql.auth.database | quote }}
+  POSTGRES_USER: {{ .Values.postgresql.auth.username | quote }}
+  POSTGRES_PASSWORD: {{ .Values.postgresql.auth.password | quote }}
+  DB_HOST: "{{ .Release.Name }}-postgresql"
+  DB_PORT: {{ .Values.database.port | quote }}
+  DJANGO_SECRET_KEY: {{ .Values.envVars.DJANGO_SECRET_KEY | quote }}
+  DJANGO_DEBUG: {{ .Values.envVars.DJANGO_DEBUG | quote }}
+  ALLOWED_HOSTS: {{ .Values.envVars.ALLOWED_HOSTS | quote }}
+

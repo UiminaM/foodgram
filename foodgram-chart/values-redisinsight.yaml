@@ -1,0 +1,15 @@
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+  - host: redis-insight.foodgram.local
+    paths:
+    - /
+    pathType: Prefix
+  tls:
+  - secretName: redisinsight-tls
+    hosts:
+    - redis-insight.foodgram.local 
+
+persistentVolumeClaim:
+  create: true

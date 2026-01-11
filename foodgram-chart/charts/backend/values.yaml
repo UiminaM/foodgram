@@ -1,3 +1,5 @@
+replicaCount: 1
+
 image:
   repository: foodgram_backend
   tag: latest
@@ -7,12 +9,6 @@ service:
   name: backend-service
   port: 8000
 
-persistence:
-  collectedStatic:
-    enabled: true
-  media:
-    enabled: true
-
 envVars:
   DJANGO_SECRET_KEY: "devsecret"
   DJANGO_DEBUG: "False"
@@ -21,12 +17,9 @@ envVars:
 database:
   port: 5432
 
-pvc:
-  media:
-    name: media-pvc
-    accessModes: ReadWriteOnce
-    storage: 1Gi
-  collect-static:
-    name: collected-static-pvc
-    accessModes: ReadWriteOnce
-    storage: 1Gi
+envFrom: []
+ - configMapRef:
+    name: redis-conn
+ - secretRef:
+    name: redis-auth
+

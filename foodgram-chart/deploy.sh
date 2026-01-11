@@ -4,7 +4,6 @@ set -a
 source .env
 set +a
 
-helm upgrade --install foodgram-helm ./foodgram-helm \
+helm upgrade --install foodgram-helm . \
   -n foodgram \
-  -f values.yaml 
-  
+  -f values.yaml
