@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.primary.service.name }}-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redis.foodgram.local
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.primary.service.port }}
+      targetPort: {{ .Values.primary.service.targetPort }}
+  selector:
+    app: {{ .Values.primary.service.name }}

@@ -1,0 +1,137 @@
+global:
+  domain: foodgram.local
+  namespace: foodgram
+  environment: "development"
+
+enabled: true
+replicaCount: 1
+
+image:
+  repository: UiminaM/foodgram
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  name: django-service
+
+selector:
+  app: django
+
+ingress:
+  enabled: true
+  hostname: foodgram.local
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  tls:
+    enabled: true
+    secretName: foodgram-tls
+
+  rules:
+    - host: foodgram.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: django-service
+                port:
+                  number: 8000
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: django-service
+                port:
+                  number: 8000
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: django-service
+                port:
+                  number: 8001
+
+env:
+  DJANGO_SETTINGS_MODULE: "foodgram.settings"
+  DJANGO_ALLOWED_HOSTS: "backend,localhost,127.0.0.1,foodgram.local"
+  DJANGO_DEBUG: "False"
+  DB_HOST: postgres
+  DB_PORT: "5432"
+
+secrets:
+  SECRET_KEY: ref+vault://foodgram/backend#secret_key
+
+resources:
+  limits:
+    cpu: "300m"
+    memory: "300Mi"
+  requests:
+    cpu: "60m"
+    memory: "150Mi"
+
+autoscaling:
+  hpa:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  vpa:
+    enabled: false
+    updateMode: "Off"
+    minAllowed:
+      cpu: "50m"
+      memory: "128Mi"
+    maxAllowed:
+      cpu: "2"
+      memory: "1Gi"
+
+auth:
+  username: ref+vault://foodgram/db#POSTGRES_USER
+  database: ref+vault://foodgram/db#POSTGRES_DB
+  password: ref+vault://foodgram/db#POSTGRES_PASSWORD
+
+volumes:
+  media:
+    enabled: true
+    pvcName: media-pvc
+    mountPath: /app/media
+  static:
+    enabled: true
+    pvcName: static-pvc
+    mountPath: /app/static
+  data:
+    enabled: true
+    pvcName: data-pvc
+    mountPath: /app/data
+
+vault:
+  clusterIP: "10.97.53.250"
+  hostname: "vault.local"
+
+persistence:
+  data:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+
+secret: app-env
+configMap: backend-config
+
+celery:
+  broker:
+    host: rabbitmq
+    port: 5672
+    username: ref+vault://foodgram/rabbitmq#username
+    password: ref+vault://foodgram/rabbitmq#password

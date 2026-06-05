@@ -1,0 +1,127 @@
+global:
+  domain: foodgram.local
+  namespace: foodgram
+  environment: development
+
+  image:
+    backend:
+      repository: UiminaM/foodgram
+      tag: "latest"
+    frontend:
+      repository: UiminaM/foodgram-frontend
+      tag: "latest"
+
+  db:
+    host: postgres
+    port: "5432"
+    name: ref+vault://foodgram/db#POSTGRES_DB
+    user: ref+vault://foodgram/db#POSTGRES_USER
+    password: ref+vault://foodgram/db#POSTGRES_PASSWORD
+
+  redis:
+    host: redis-service
+    port: "6379"
+    password: ref+vault://foodgram/redis#password
+
+  rabbitmq:
+    host: rabbitmq
+    port: "5672"
+    username: ref+vault://foodgram/rabbitmq#username
+    password: ref+vault://foodgram/rabbitmq#password
+
+  django:
+    secretKey: ref+vault://foodgram/backend#secret_key
+    allowedHosts: "backend,localhost,127.0.0.1,foodgram.local"
+    debug: "False"
+    settingsModule: "foodgram.settings"
+
+  vault:
+    hostname: vault.local
+    clusterIP: ""
+
+backend:
+  enabled: true
+  replicaCount: 1
+  consumers:
+    enabled: false
+  resources:
+    limits:
+      cpu: "750m"
+      memory: "768Mi"
+    requests:
+      cpu: "300m"
+      memory: "256Mi"
+  autoscaling:
+    hpa:
+      enabled: false
+    vpa:
+      enabled: false
+
+nginx:
+  enabled: true
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+
+db:
+  enabled: true
+  resources:
+    limits:
+      cpu: "750m"
+      memory: "768Mi"
+    requests:
+      cpu: "300m"
+      memory: "256Mi"
+
+redis:
+  enabled: true
+  image:
+    repository: redis/redis-stack-server
+    tag: "7.4.0-v0"
+  auth:
+    password: ""
+  persistence:
+    redis:
+      enabled: true
+      size: 1Gi
+      accessMode: ReadWriteOnce
+      storageClass: ""
+  primary:
+    replicaCount: 1
+    pvc: /data/redis
+    pvcName: redis-storage
+    service:
+      name: redis
+      port: 6379
+      targetPort: 6379
+      type: ClusterIP
+    resources:
+      limits:
+        cpu: "300m"
+        memory: "384Mi"
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+
+rabbitmq:
+  enabled: false
+
+jobs:
+  enabled: true
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "384Mi"
+    requests:
+      cpu: "100m"
+      memory: "192Mi"
+
+celery:
+  enabled: false
+
+flower:
+  enabled: false

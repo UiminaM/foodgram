@@ -1,6 +1,10 @@
 foodgram-chart/charts/*.tgz
+.helm/charts/*.tgz
+.helm/charts/**/charts/*.tgz
+.werf/
 foodgram-chart/.env
 infra/.env
+.env
 load_tests/reports/
 .venv*/
 __pycache__/

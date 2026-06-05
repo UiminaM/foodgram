@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "nginx.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: {{ include "nginx.image" . | quote }}
+          ports:
+            - containerPort: {{ .Values.config.port }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          - name: nginx-config-volume
+            mountPath: /etc/nginx/conf.d/default.conf
+            subPath: default.conf
+          - name: media-volume
+            mountPath: /app/media
+          - name: backend-static
+            mountPath: /app/static
+      volumes:
+        - name: nginx-config-volume
+          configMap:
+            name: nginx-config
+        - name: media-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.media.pvcName }}
+        - name: backend-static
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.static.pvcName }}

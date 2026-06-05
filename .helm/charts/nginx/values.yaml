@@ -1,0 +1,80 @@
+global:
+  domain: foodgram.local
+  namespace: foodgram
+  environment: "development"
+
+enabled: true
+image:
+  repository: UiminaM/foodgram-frontend
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 80
+  name: nginx-service
+  targetPort: 80
+selector:
+  app: nginx
+ingress:
+  enabled: true
+  hostname: "foodgram.local"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  tls:
+    enabled: true
+    secretName: foodgram-tls
+  services:
+    django: django-service
+    nginx: nginx-service
+    ports:
+      django: 8000
+      nginx: 80
+      ws: 8001
+resources:
+  limits:
+    cpu: "200m"
+    memory: "128Mi"
+  requests:
+    cpu: "50m"
+    memory: "64Mi"
+
+persistence:
+  static:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+
+  media:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+
+config:
+  port: 80
+  upstreams:
+    backend:
+      service: django-service
+      port: 8000
+    websocket:
+      service: django-service
+      port: 8001
+  paths:
+    static: /usr/share/nginx/html
+    media: /app/media
+    backend_static: /app/static
+  locations:
+    api: /api/
+    admin: /admin/
+    websocket: /ws/
+    rabbitmq: /internal/
+
+volumes:
+  media:
+    enabled: true
+    pvcName: media-pvc
+    mountPath: /app/media
+  static:
+    enabled: true
+    pvcName: static-pvc
+    mountPath: /app/static

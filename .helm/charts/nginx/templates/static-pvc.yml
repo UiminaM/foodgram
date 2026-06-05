@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: static-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "nginx.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.static.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.static.size }}

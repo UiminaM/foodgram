@@ -1,0 +1,27 @@
+dependencies:
+- name: backend
+  repository: file://charts/backend
+  version: 0.1.0
+- name: nginx
+  repository: file://charts/nginx
+  version: 0.1.0
+- name: db
+  repository: file://charts/db
+  version: 0.1.0
+- name: redis
+  repository: file://charts/redis
+  version: 0.1.0
+- name: rabbitmq
+  repository: file://charts/rabbitmq
+  version: 0.1.0
+- name: jobs
+  repository: file://charts/jobs
+  version: 0.1.0
+- name: celery
+  repository: file://charts/celery
+  version: 0.1.0
+- name: flower
+  repository: file://charts/flower
+  version: 0.1.0
+digest: sha256:a3a2ae71d1d9002ad76c3b2e88dd2a76d878bc7ea6ab2fe8568166b711e9f8ce
+generated: "2026-05-30T14:54:40.480255+03:00"

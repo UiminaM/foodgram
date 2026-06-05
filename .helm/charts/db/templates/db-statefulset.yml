@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-sts
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "db.labels" . | nindent 4 }}
+spec:
+  serviceName: "{{ .Values.primary.service.name }}"
+  replicas: {{ .Values.primary.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.primary.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.primary.service.name }}
+    spec:
+      containers:
+      - name: {{ .Values.primary.service.name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        env:
+          - name: POSTGRES_DB
+            value: {{ .Values.auth.database | quote }}
+          - name: POSTGRES_USER
+            value: {{ .Values.auth.username | quote }}
+          - name: POSTGRES_PASSWORD
+            value: {{ .Values.auth.password | quote }}
+          - name: DB_HOST
+            value: {{ .Values.primary.service.name }}
+        ports:
+        - containerPort: {{ .Values.primary.service.port }}
+        {{- with .Values.primary.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: db-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: db-storage
+    spec:
+      accessModes: [ "{{ .Values.persistence.db.accessMode }}" ]
+      resources:
+        requests:
+          storage: {{ .Values.persistence.db.size }}

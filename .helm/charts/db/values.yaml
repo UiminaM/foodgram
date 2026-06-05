@@ -1,0 +1,40 @@
+global:
+  domain: foodgram.local
+  namespace: foodgram
+  environment: "development"
+
+enabled: true
+image:
+  repository: postgres
+  tag: 15
+primary:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 5Gi
+  service:
+    name: postgres
+    port: 5432
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+auth:
+  username: ref+vault://foodgram/db#POSTGRES_USER
+  database: ref+vault://foodgram/db#POSTGRES_DB
+  password: ref+vault://foodgram/db#POSTGRES_PASSWORD
+fullnameOverride: foodgram-postgresql
+
+env:
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+
+persistence:
+  db:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""

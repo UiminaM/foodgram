@@ -1,0 +1,38 @@
+global:
+  domain: foodgram.local
+  namespace: foodgram
+  environment: "development"
+
+enabled: true
+image:
+  repository: iitssasha/foodgram
+  tag: "latest"
+collectstatic-job:
+  enabled: true
+  command: [ "python", "manage.py", "collectstatic", "--noinput" ]
+migrate-job:
+  enabled: true
+  command: [ "python", "manage.py", "migrate", "--noinput" ]
+auth:
+  username: ref+vault://foodgram/db#POSTGRES_USER
+  database: ref+vault://foodgram/db#POSTGRES_DB
+  password: ref+vault://foodgram/db#POSTGRES_PASSWORD
+
+env:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+
+config:
+  name: backend-config
+  secret: app-env
+
+pvc:
+  name: static-pvc
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "384Mi"
+  requests:
+    cpu: "100m"
+    memory: "192Mi"

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.global.svcName }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "flower.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: {{ .Values.global.name }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.env.port }}
+      targetPort: {{ .Values.env.port }}

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.primary.service.name }}-statefulset
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ .Values.primary.service.name }}-headless-service
+  replicas: {{ .Values.primary.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.primary.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.primary.service.name }}
+    spec:
+      containers:
+      - name: {{ .Values.primary.service.name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command: ["redis-server"]
+        {{- $redisPassword := .Values.auth.password | default .Values.global.redis.password }}
+        {{- if $redisPassword }}
+        args: ["--requirepass", {{ $redisPassword | quote }}]
+        {{- end }}
+        ports:
+        - containerPort: {{ .Values.primary.service.port }}
+        {{- with .Values.primary.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: {{ .Values.primary.pvcName }}
+          mountPath: {{ .Values.primary.pvc }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Values.primary.pvcName }}
+    spec:
+      accessModes: [ "{{ .Values.persistence.redis.accessMode }}" ]
+      resources:
+        requests:
+          storage: {{ .Values.persistence.redis.size }}

@@ -1,0 +1,25 @@
+global:
+  namespace: foodgram
+  name: flower
+  svcName: flower-ui
+  environment: "development"
+
+replicaCount: 1
+
+env:
+  port: 5555
+
+configMap: backend-config
+secret: app-env
+
+image:
+  repository: iitssasha/foodgram
+  tag: "latest"
+
+resources:
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+  requests:
+    cpu: "50m"
+    memory: "128Mi"

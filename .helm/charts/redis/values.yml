@@ -1,0 +1,37 @@
+global:
+  namespace: foodgram
+  environment: "development"
+
+enabled: true
+image:
+  repository: redis/redis-stack-server
+  tag: 7.4.0-v8
+primary:
+  replicaCount: 1
+  pvc: /data/redis
+  pvcName: redis-storage
+  persistence:
+    enabled: true
+    size: 5Gi
+  service:
+    name: redis
+    port: 6379
+    targetPort: 6379
+    type: ClusterIP
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "384Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+persistence:
+  redis:
+    enabled: true
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+
+auth:
+  password: ref+vault://foodgram/redis#password

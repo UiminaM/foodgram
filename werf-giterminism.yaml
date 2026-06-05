@@ -1,0 +1,17 @@
+giterminismConfigVersion: "1"
+
+giterminism:
+  enabled: true
+
+config:
+  goTemplateRendering:
+    allowEnvVariables:
+      - VAULT_ADDR
+      - VAULT_TOKEN
+      - VAULT_ROLE_ID
+      - VAULT_SECRET_ID
+      - DOCKER_USERNAME
+      - DOCKER_PASSWORD
+      - WERF_ENV
+  stapel:
+    allowFromLatest: false

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rmq-ingress
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  labels:
+    {{- include "rabbitmq.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: rabbitmq.foodgram.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rmq-rabbitmq
+                port:
+                  number: 15672

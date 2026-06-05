@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flower-ingress
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  labels:
+    {{- include "flower.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: flower.foodgram.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.global.svcName }}
+                port:
+                  number: {{ .Values.env.port }}
