@@ -1,0 +1,189 @@
+name: Docker Build & Push (self-hosted runner)
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version without v prefix (for manual run)"
+        required: false
+        default: "manual"
+
+concurrency:
+  group: docker-self-hosted-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/foodgram
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/foodgram-frontend
+
+jobs:
+  build-backend:
+    name: Build & Push Backend (self-hosted)
+    runs-on: [self-hosted, linux, k8s]
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract tag version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            echo "Docker login attempt ${attempt}/5..."
+            if echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin; then
+              exit 0
+            fi
+            sleep 15
+          done
+          exit 1
+
+      - name: Build and push Backend
+        run: |
+          docker build --progress=plain \
+            -t "${{ env.BACKEND_IMAGE }}:${{ steps.version.outputs.VERSION }}" \
+            -t "${{ env.BACKEND_IMAGE }}:latest" \
+            ./backend/
+          for attempt in 1 2 3; do
+            docker push "${{ env.BACKEND_IMAGE }}:${{ steps.version.outputs.VERSION }}" && \
+            docker push "${{ env.BACKEND_IMAGE }}:latest" && exit 0
+            echo "Push failed, retry in 15s (${attempt}/3)..."
+            sleep 15
+          done
+          exit 1
+
+  build-frontend:
+    name: Build & Push Frontend (self-hosted)
+    runs-on: [self-hosted, linux, k8s]
+    needs: build-backend
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract tag version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "21.7.1"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend static files
+        working-directory: frontend
+        env:
+          CI: false
+          NODE_OPTIONS: --max-old-space-size=1536
+        run: |
+          npm ci --legacy-peer-deps --no-audit --no-fund
+          npm run build
+
+      - name: Login to Docker Hub (reuse or retry)
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [ -s "${HOME}/.docker/config.json" ] && grep -q '"auths"' "${HOME}/.docker/config.json"; then
+            echo "Reusing Docker Hub session from backend job"
+            exit 0
+          fi
+          for attempt in 1 2 3 4 5; do
+            echo "Docker login attempt ${attempt}/5..."
+            if echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin; then
+              exit 0
+            fi
+            sleep 15
+          done
+          exit 1
+
+      - name: Build and push Frontend image
+        run: |
+          docker build --progress=plain \
+            -f frontend/Dockerfile.runtime \
+            -t "${{ env.FRONTEND_IMAGE }}:${{ steps.version.outputs.VERSION }}" \
+            -t "${{ env.FRONTEND_IMAGE }}:latest" \
+            frontend/
+          for attempt in 1 2 3; do
+            docker push "${{ env.FRONTEND_IMAGE }}:${{ steps.version.outputs.VERSION }}" && \
+            docker push "${{ env.FRONTEND_IMAGE }}:latest" && exit 0
+            echo "Push failed, retry in 15s (${attempt}/3)..."
+            sleep 15
+          done
+          exit 1
+
+  update-helm-values:
+    name: Update image tag in Helm values (self-hosted)
+    runs-on: [self-hosted, linux, k8s]
+    needs: [build-backend, build-frontend]
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract tag version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Update image tags in Helm values
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          for f in \
+            foodgram-chart/charts/backend/values.yaml \
+            foodgram-chart/charts/frontend/values.yaml; do
+            sed -i "s|tag: .*|tag: \"${VERSION}\"|g" "$f"
+          done
+
+      - name: Commit updated values
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: main
+          commit_message: "chore: bump image tag to ${{ steps.version.outputs.VERSION }} [skip ci]"
+          file_pattern: "foodgram-chart/charts/**/values.yaml"

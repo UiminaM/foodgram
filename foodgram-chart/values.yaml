@@ -1,6 +1,11 @@
 global:
   namespace: foodgram
   domain: foodgram.local
+  postgresql:
+    auth:
+      username: ref+vault://secret/foodgram/#POSTGRES_USER
+      password: ref+vault://secret/foodgram/#POSTGRES_PASSWORD
+      database: ref+vault://secret/foodgram/#POSTGRES_DB
   persistence:
     collectedStatic:
       enabled: true
@@ -21,11 +26,30 @@ ingress:
 database:
   port: 5432
 
+metricsServer:
+  enabled: true
+  namespace: kube-system
+  image:
+    repository: registry.k8s.io/metrics-server/metrics-server
+    tag: v0.7.2
+    pullPolicy: IfNotPresent
+  args:
+    - --cert-dir=/tmp
+    - --secure-port=10250
+    - --kubelet-insecure-tls
+    - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
 postgresql:
   enabled: true
   image:
-    repository: postgres
-    tag: "13-alpine" 
+    repository: bitnamilegacy/postgresql
   auth:
     username: ref+vault://secret/foodgram/#POSTGRES_USER
     password: ref+vault://secret/foodgram/#POSTGRES_PASSWORD
@@ -35,3 +59,10 @@ postgresql:
       enabled: true
       size: 1Gi
       storageClass: standard
+    resources:
+      requests:
+        cpu: 300m
+        memory: 256Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi

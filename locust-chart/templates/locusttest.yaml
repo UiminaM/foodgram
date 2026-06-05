@@ -1,0 +1,31 @@
+apiVersion: locust.io/v1
+kind: LocustTest
+metadata:
+  name: {{ .Values.locust.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: foodgram-locust
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  image: {{ .Values.locust.image | quote }}
+  workers: {{ .Values.locust.workers }}
+  args: |
+    --host {{ .Values.locust.host }}
+    --users {{ .Values.locust.users }}
+    --spawn-rate {{ .Values.locust.spawnRate }}
+    --run-time {{ .Values.locust.runTime }}
+  env:
+    - name: LOCUST_AVG_RESPONSE_LIMIT_MS
+      value: {{ .Values.locust.avgResponseLimitMs | quote }}
+    - name: LOCUST_LOGLEVEL
+      value: {{ .Values.locust.logLevel | quote }}
+  master:
+    resources:
+      {{- toYaml .Values.locust.master.resources | nindent 6 }}
+  worker:
+    resources:
+      {{- toYaml .Values.locust.worker.resources | nindent 6 }}
+  locustfile:
+    configMap:
+      name: {{ .Values.locust.name }}-locustfile
+      key: locustfile.py

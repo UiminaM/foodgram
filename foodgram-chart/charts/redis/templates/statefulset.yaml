@@ -22,6 +22,8 @@ spec:
             - name: {{ .Chart.Name }}
               containerPort: {{ .Values.service.ports.port }}
               protocol: {{ .Values.service.ports.protocol }}
+          resources:
+            {{- toYaml .Values.statefulset.resources | nindent 12 }}
           volumeMounts:
             - name: {{ .Values.statefulset.pvc.name }}
               mountPath: {{ .Values.statefulset.pvc.mountPath }}

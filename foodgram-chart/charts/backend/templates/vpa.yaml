@@ -1,0 +1,27 @@
+{{- if .Values.autoscaling.vpa.enabled }}
+{{- if .Capabilities.APIVersions.Has "autoscaling.k8s.io/v1/VerticalPodAutoscaler" }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: backend-vpa
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "backend.labels" . | nindent 4 }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-deployment
+  updatePolicy:
+    updateMode: {{ .Values.autoscaling.vpa.updateMode | quote }}
+  resourcePolicy:
+    containerPolicies:
+      - containerName: backend
+        controlledResources:
+          {{- toYaml .Values.autoscaling.vpa.controlledResources | nindent 10 }}
+        minAllowed:
+          {{- toYaml .Values.autoscaling.vpa.minAllowed | nindent 10 }}
+        maxAllowed:
+          {{- toYaml .Values.autoscaling.vpa.maxAllowed | nindent 10 }}
+{{- end }}
+{{- end }}

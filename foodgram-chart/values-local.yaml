@@ -1,0 +1,12 @@
+global:
+  postgresql:
+    auth:
+      username: postgres
+      password: postgres
+      database: foodgram
+
+postgresql:
+  auth:
+    username: postgres
+    password: postgres
+    database: foodgram

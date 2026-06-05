@@ -17,6 +17,13 @@ statefulset:
     mountPath: /data/redis
     accessMode: ReadWriteOnce
     storage: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
 
 config:
   host: redis-headless-service

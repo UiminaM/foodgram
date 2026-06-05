@@ -1,5 +1,4 @@
 import requests
-import os
 from services.cache import cache
 
 NUTRIENTS = {

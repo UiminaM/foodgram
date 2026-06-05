@@ -1,4 +1,7 @@
 foodgram-chart/charts/*.tgz
 foodgram-chart/.env
+infra/.env
+load_tests/reports/
+.venv*/
 __pycache__/
 *.py[cod]

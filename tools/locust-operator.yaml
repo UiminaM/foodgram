@@ -1,0 +1,285 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: locust-operator
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: locusttests.locust.io
+spec:
+  group: locust.io
+  scope: Namespaced
+  names:
+    plural: locusttests
+    singular: locusttest
+    kind: LocustTest
+    shortNames:
+      - locust
+      - lt
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: ["workers"]
+              properties:
+                annotations:
+                  type: object
+                  additionalProperties:
+                    type: string
+                labels:
+                  type: object
+                  additionalProperties:
+                    type: string
+                image:
+                  type: string
+                  default: locustio/locust:latest
+                imagePullPolicy:
+                  type: string
+                  enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                imagePullSecrets:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                    required: ["name"]
+                workers:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                args:
+                  type: string
+                  default: ""
+                env:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required: ["name"]
+                master:
+                  type: object
+                  properties:
+                    labels:
+                      type: object
+                      additionalProperties:
+                        type: string
+                    annotations:
+                      type: object
+                      additionalProperties:
+                        type: string
+                    resources:
+                      type: object
+                      properties:
+                        requests:
+                          type: object
+                          additionalProperties:
+                            x-kubernetes-int-or-string: true
+                        limits:
+                          type: object
+                          additionalProperties:
+                            x-kubernetes-int-or-string: true
+                worker:
+                  type: object
+                  properties:
+                    labels:
+                      type: object
+                      additionalProperties:
+                        type: string
+                    annotations:
+                      type: object
+                      additionalProperties:
+                        type: string
+                    resources:
+                      type: object
+                      properties:
+                        requests:
+                          type: object
+                          additionalProperties:
+                            x-kubernetes-int-or-string: true
+                        limits:
+                          type: object
+                          additionalProperties:
+                            x-kubernetes-int-or-string: true
+                locustfile:
+                  type: object
+                  properties:
+                    content:
+                      type: string
+                    configMap:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                      required: ["name"]
+                  oneOf:
+                    - required: ["content"]
+                    - required: ["configMap"]
+                metrics:
+                  type: object
+                  properties:
+                    intervalSeconds:
+                      type: integer
+                      default: 5
+            status:
+              type: object
+              properties:
+                state:
+                  type: string
+                message:
+                  type: string
+                fail_ratio:
+                  type: string
+                total_rps:
+                  type: number
+                user_count:
+                  type: integer
+                worker_count:
+                  type: integer
+                worker_ratio:
+                  type: string
+      additionalPrinterColumns:
+        - name: state
+          type: string
+          jsonPath: .status.state
+        - name: workers
+          type: string
+          jsonPath: .status.worker_ratio
+        - name: fail_ratio
+          type: string
+          jsonPath: .status.fail_ratio
+        - name: RPS
+          type: string
+          jsonPath: .status.total_rps
+        - name: users
+          type: string
+          jsonPath: .status.user_count
+        - name: age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: locust-operator
+  namespace: locust-operator
+  labels:
+    app.kubernetes.io/name: locust-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: locust-operator
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - locust.io
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - configmaps
+    verbs:
+      - get
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: locust-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: locust-operator
+subjects:
+  - kind: ServiceAccount
+    name: locust-operator
+    namespace: locust-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-operator
+  namespace: locust-operator
+  labels:
+    app.kubernetes.io/name: locust-operator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: locust-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: locust-operator
+    spec:
+      serviceAccountName: locust-operator
+      containers:
+        - name: locust-operator
+          image: locustio/operator:0.1.6
+          imagePullPolicy: IfNotPresent
+          args:
+            - --all-namespaces
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080

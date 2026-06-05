@@ -6,10 +6,10 @@ dependencies:
   repository: file://charts/redis
   version: 0.1.0
 - name: backend
-  repository: "file://charts/backend"
+  repository: file://charts/backend
   version: 0.1.0
 - name: frontend
+  repository: file://charts/frontend
   version: 0.1.0
-  repository: "file://charts/frontend"
-digest: sha256:13a67cd99418e8ef0bd7d07a3321dae8235a32ecf48b8a76adb623d7e64c16cd
-generated: "2026-01-10T12:04:53.961621+03:00"
+digest: sha256:a250d63f05a9b8dc32abcd9b7690fdb10be46dad5526ffe70277cf921b034b4e
+generated: "2026-06-03T00:06:12.527438+03:00"

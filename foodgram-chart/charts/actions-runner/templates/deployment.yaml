@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actions-runner
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "actions-runner.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: actions-runner
+  template:
+    metadata:
+      labels:
+        app: actions-runner
+    spec:
+      containers:
+        - name: runner
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: REPO_URL
+              value: {{ .Values.github.repoUrl | quote }}
+            - name: RUNNER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: runner-secret
+                  key: RUNNER_NAME
+            - name: RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: runner-secret
+                  key: RUNNER_TOKEN
+                  optional: true
+            - name: ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: runner-secret
+                  key: ACCESS_TOKEN
+                  optional: true
+            - name: RUNNER_WORKDIR
+              value: /runner/_work
+            - name: RUNNER_SCOPE
+              value: repo
+            - name: LABELS
+              value: self-hosted,linux,k8s
+            {{- if .Values.dind.enabled }}
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+            - name: DOCKER_TLS_VERIFY
+              value: ""
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: runner-work
+              mountPath: /runner/_work
+
+        {{- if .Values.dind.enabled }}
+        - name: dind
+          image: {{ .Values.dind.image }}
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          {{- with .Values.dind.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: runner-work
+              mountPath: /runner/_work
+        {{- end }}
+
+      volumes:
+        - name: runner-work
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: runner-work-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
