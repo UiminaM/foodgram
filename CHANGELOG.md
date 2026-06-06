@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/UiminaM/foodgram/compare/v1.0.0...v1.1.0) (2026-06-06)
+
+
+### Bug Fixes
+
+* **ci:** fetch tags in semantic-release checkout ([9b082a4](https://github.com/UiminaM/foodgram/commit/9b082a40a1446a0dd3d185505d1fea6402799fc5))
+* **ci:** test ([7a16570](https://github.com/UiminaM/foodgram/commit/7a165701b463c21802560aa7df8280c2b3954d6f))
+
+
+### Features
+
+* **werf:** add werf config, helm chart and deploy scripts ([cdac60e](https://github.com/UiminaM/foodgram/commit/cdac60e7777fabda2280912d9b742b6e38eb686f))
+
 # 1.0.0 (2026-06-05)
 
 
