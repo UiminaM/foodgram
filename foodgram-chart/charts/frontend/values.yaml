@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: UiminaM/foodgram-frontend
-  tag: "latest"
+  tag: "1.1.0"
   pullPolicy: IfNotPresent
 
 service:
